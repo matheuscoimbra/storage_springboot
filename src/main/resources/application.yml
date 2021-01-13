@@ -1,0 +1,13 @@
+spring:
+  profiles:
+    active: ${PROFILE:development}
+  cloud:
+    gcp:
+      storage:
+        credentials:
+          location: file:${GCP_KEY_PATH:bla.json}
+        project-id: ${GCP_PROJECT_ID:blu}
+server:
+  port: 8083
+
+bucketname: bla-flow-develop.appspot.com
