@@ -4,10 +4,10 @@ spring:
   cloud:
     gcp:
       storage:
-        project-id: ${GCP_PROJECT_ID:asd-flow-develop}
+        project-id: ${GCP_PROJECT_ID:sd-flow-develop}
         credentials:
-          location: file:${GCP_KEY_PATH:asd-flow-develop-3c715f83707a.json}
+          location: file:${GCP_KEY_PATH:sd-flow-develop-3c715f83707a.json}
 server:
   port: 8084
 
-bucketname: asd-flow-develop.appspot.com
+bucketname: sd-flow-develop.appspot.com

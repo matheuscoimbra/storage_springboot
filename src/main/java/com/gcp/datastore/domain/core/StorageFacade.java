@@ -95,8 +95,8 @@ public class StorageFacade implements StorageAdapter {
 
     public MediaType getMediaType(String contentType){
        return  switch (contentType){
-            case "application/pdf": yield  MediaType.APPLICATION_PDF;
-            case "image/jpeg","image/jpg": yield  MediaType.IMAGE_JPEG;
+            case "application/pdf": yield MediaType.APPLICATION_PDF;
+            case "image/jpeg","image/jpg": yield MediaType.IMAGE_JPEG;
             case "image/png": yield MediaType.IMAGE_PNG;
             case "text/plain": yield MediaType.TEXT_PLAIN;
             default: yield MediaType.APPLICATION_OCTET_STREAM;
