@@ -1,20 +1,20 @@
 package com.gcp.datastore.domain.core;
 
+import com.gcp.datastore.domain.core.model.MediaDTO;
 import com.gcp.datastore.domain.infrastructure.adapter.StorageAdapter;
+import com.gcp.datastore.infrastructure.util.StorageUtils;
 import com.google.cloud.storage.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
-import java.net.URL;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
 
 import static com.gcp.datastore.infrastructure.util.StorageUtils.convertToByteArray;
 
@@ -29,22 +29,34 @@ public class StorageFacade implements StorageAdapter {
     @Value("${bucketname}")
     private String bucketName;
 
+    @Value("${spring.cloud.gcp.storage.project-id}")
+    private String projectId;
+
 
     @Override
-    public Mono<URL> uploadFile(FilePart filePart, String bucketName,String subdirectory) {
+    public Mono<MediaDTO> uploadFile(FilePart filePart, String subdirectory) {
         final byte[] byteArray = convertToByteArray(filePart);
 
+        checkFileExtension(filePart.filename());
+
+        final String contenType = filePart.headers().getContentType().getType()+"/"+filePart.headers().getContentType().getSubtype();
         final BlobId blobId = constructBlobId(bucketName, subdirectory, filePart.filename());
 
-        return Mono.just(blobId)
-                //Create the blobInfo
-                .map(bId -> BlobInfo.newBuilder(blobId)
-                        .build())
-                //Upload the blob to GCS
-                .doOnNext(blobInfo -> storage.create(blobInfo, byteArray))
-                //Create a Signed "Path Style" URL to access the newly created Blob
-                //Set the URL expiry to 10 Minutes
-                .map(blobInfo -> createUrl(blobInfo, 999999, TimeUnit.DAYS));
+        BlobInfo blobInfo =
+                storage.create(
+                        BlobInfo
+                                .newBuilder(blobId).setContentType(contenType)
+                                .setAcl(new ArrayList<>(Arrays.asList(Acl.of(Acl.User.ofAllUsers(), Acl.Role.READER))))
+                                .build(),byteArray
+
+                );
+
+
+        return Mono.just( createUrl( blobInfo,contenType));
+    }
+
+    private MediaDTO createUrl(BlobInfo blobInfo, String contenType) {
+        return MediaDTO.builder().name("/download/"+blobInfo.getName()).contentType(contenType).build();
     }
 
     @Override
@@ -76,13 +88,24 @@ public class StorageFacade implements StorageAdapter {
 
     @Override
     public void createFolder(String name) {
-        Storage storage = StorageOptions.newBuilder().setProjectId("hsd-flow-develop").build().getService();
+        Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
 
-        // Select all fields. Fields can be selected individually e.g. Storage.BucketField.NAME
         Bucket bucket =
                 storage.get(bucketName, Storage.BucketGetOption.fields(Storage.BucketField.values()));
         Blob folderCreated = bucket.create(name + "/", "".getBytes());
         log.info("bucket criado "+folderCreated.getName());
+    }
+
+
+    //public Mono<ServerResponse> getFileResponseHandler(ServerRequest serverRequest)
+
+    @Override
+    public Mono<byte[]> getFile(String subdirectory, String objectName) {
+        Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
+
+        Blob blob = storage.get(BlobId.of(bucketName, subdirectory+"/"+objectName));
+
+        return Mono.just(blob.getContent());
     }
 
 
@@ -93,10 +116,18 @@ public class StorageFacade implements StorageAdapter {
                 .orElse(BlobId.of(bucketName, fileName));
     }
 
-    private URL createUrl(BlobInfo blobInfo,
-                          int duration, TimeUnit timeUnit) {
-        return storage
-                .signUrl(blobInfo, duration, timeUnit, Storage.SignUrlOption.withPathStyle());
+    private void checkFileExtension(String fileName) {
+        if (fileName != null && !fileName.isEmpty() && fileName.contains(".")) {
+            String[] allowedExt = {".jpg", ".jpeg", ".png", ".gif",".pdf"};
+            for (String ext : allowedExt) {
+                if (fileName.endsWith(ext)) {
+                    return;
+                }
+            }
+            throw new RuntimeException("file must be an image");
+        }
     }
+
+
 
 }

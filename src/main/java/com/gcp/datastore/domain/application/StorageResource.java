@@ -1,19 +1,21 @@
 package com.gcp.datastore.domain.application;
 
 import com.gcp.datastore.domain.core.StorageFacade;
+import com.gcp.datastore.domain.core.model.MediaDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import reactor.core.publisher.Mono;
 
-import java.net.URL;
+import java.io.IOException;
 
 @RequiredArgsConstructor
 @RestController
-@RequestMapping("storage")
+@RequestMapping()
 @Slf4j
 public class StorageResource {
 
@@ -21,9 +23,9 @@ public class StorageResource {
     private final StorageFacade storage;
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public Mono<URL> uploadFile(@RequestPart("file") FilePart filePart,@RequestParam("bucket") String name, @RequestParam("subdirectory") String subdirectory) {
+    public Mono<MediaDTO> uploadFile(@RequestPart("file") FilePart filePart, @RequestParam("subdirectory") String subdirectory) {
 
-        return storage.uploadFile(filePart, name,subdirectory );
+        return storage.uploadFile(filePart, subdirectory );
     }
 
     @GetMapping(value = "/bucket/info")
@@ -31,6 +33,14 @@ public class StorageResource {
 
         return storage.bucketInfo(name);
     }
+
+    @GetMapping(value = "/download/{subdirectory}/{object}",produces = MediaType.APPLICATION_PDF_VALUE)
+    public Mono<byte[]> getFile(@PathVariable("subdirectory") String subdirectory, @PathVariable("object") String object) {
+
+        return storage.getFile(subdirectory,object);
+    }
+
+
 
     @PostMapping(value = "/bucket/create")
     public ResponseEntity<Object> createBucket(@RequestParam("bucket") String name) {
