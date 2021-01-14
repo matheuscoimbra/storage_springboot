@@ -6,7 +6,7 @@ plugins {
 
 group = 'com.gcp.datastore'
 version = '1.0.0'
-sourceCompatibility = '11'
+sourceCompatibility = '15'
 
 configurations {
     compileOnly {

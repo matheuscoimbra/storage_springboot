@@ -2,11 +2,11 @@ package com.gcp.datastore.domain.core;
 
 import com.gcp.datastore.domain.core.model.MediaDTO;
 import com.gcp.datastore.domain.infrastructure.adapter.StorageAdapter;
-import com.gcp.datastore.infrastructure.util.StorageUtils;
 import com.google.cloud.storage.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
@@ -63,7 +63,6 @@ public class StorageFacade implements StorageAdapter {
     public Mono<Map<Object, Object>> bucketInfo(String bucketName) {
         Storage storage = StorageOptions.newBuilder().setProjectId("hsd-flow-develop").build().getService();
 
-        // Select all fields. Fields can be selected individually e.g. Storage.BucketField.NAME
         Bucket bucket =
                 storage.get(bucketName, Storage.BucketGetOption.fields(Storage.BucketField.values()));
 
@@ -78,9 +77,6 @@ public class StorageFacade implements StorageAdapter {
         info.put("TimeCreated: " , bucket.getCreateTime());
         info.put("VersioningEnabled: " , bucket.versioningEnabled());
         info.put("labels: " , bucket.getLabels()==null?"":bucket.getLabels().entrySet());
-
-
-
 
         return Mono.just(info);
 
@@ -97,15 +93,29 @@ public class StorageFacade implements StorageAdapter {
     }
 
 
-    //public Mono<ServerResponse> getFileResponseHandler(ServerRequest serverRequest)
+    public MediaType getMediaType(String contentType){
+       return  switch (contentType){
+            case "application/pdf": yield  MediaType.APPLICATION_PDF;
+            case "image/jpeg","image/jpg": yield  MediaType.IMAGE_JPEG;
+            case "image/png": yield MediaType.IMAGE_PNG;
+            case "text/plain": yield MediaType.TEXT_PLAIN;
+            default: yield MediaType.APPLICATION_OCTET_STREAM;
+        };
+
+    }
+
+    public Mono<ServerResponse> getFileResponseHandler(ServerRequest serverRequest){
+        var result = getFile(serverRequest.pathVariable("subdirectory"),serverRequest.pathVariable("object"));
+        return  ServerResponse.ok().contentType(getMediaType(result.getContentType()))
+                .bodyValue(result.getContent());
+    }
 
     @Override
-    public Mono<byte[]> getFile(String subdirectory, String objectName) {
+    public Blob getFile(String subdirectory, String objectName) {
         Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
 
-        Blob blob = storage.get(BlobId.of(bucketName, subdirectory+"/"+objectName));
+        return storage.get(BlobId.of(bucketName, subdirectory+"/"+objectName));
 
-        return Mono.just(blob.getContent());
     }
 
 

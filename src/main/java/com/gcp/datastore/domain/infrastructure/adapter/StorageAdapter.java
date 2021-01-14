@@ -1,6 +1,7 @@
 package com.gcp.datastore.domain.infrastructure.adapter;
 
 import com.gcp.datastore.domain.core.model.MediaDTO;
+import com.google.cloud.storage.Blob;
 import org.springframework.http.codec.multipart.FilePart;
 import reactor.core.publisher.Mono;
 
@@ -14,5 +15,5 @@ public interface StorageAdapter {
 
     void createFolder(String name);
 
-    Mono<byte[]> getFile(String subdirectory, String objectName);
+    Blob getFile(String subdirectory, String objectName);
 }

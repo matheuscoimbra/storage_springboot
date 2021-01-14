@@ -34,11 +34,11 @@ public class StorageResource {
         return storage.bucketInfo(name);
     }
 
-    @GetMapping(value = "/download/{subdirectory}/{object}",produces = MediaType.APPLICATION_PDF_VALUE)
+   /* @GetMapping(value = "/download/{subdirectory}/{object}",produces = MediaType.APPLICATION_PDF_VALUE)
     public Mono<byte[]> getFile(@PathVariable("subdirectory") String subdirectory, @PathVariable("object") String object) {
 
         return storage.getFile(subdirectory,object);
-    }
+    }*/
 
 
 
