@@ -41,7 +41,7 @@ public class StorageFacade implements StorageAdapter {
 
         checkFileExtension(filePart.filename());
 
-        final String contenType = filePart.headers().getContentType().getType()+"/"+filePart.headers().getContentType().getSubtype();
+        final String contenType = "%s/%s".formatted(filePart.headers().getContentType().getType(), filePart.headers().getContentType().getSubtype());
         final BlobId blobId = constructBlobId(bucketName, subdirectory, filePart.filename());
 
         BlobInfo blobInfo =
