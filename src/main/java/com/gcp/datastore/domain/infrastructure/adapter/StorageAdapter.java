@@ -19,4 +19,6 @@ public interface StorageAdapter {
     Blob getFile(String subdirectory, String objectName);
 
     Flux<MediaDTO> getFilesFromDirectory(String subdirectory);
+
+    boolean deleteObject(String objectName);
 }

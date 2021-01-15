@@ -17,7 +17,6 @@ import reactor.core.publisher.Mono;
 import javax.annotation.Nullable;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.gcp.datastore.infrastructure.util.StorageUtils.convertToByteArray;
 
@@ -131,6 +130,14 @@ public class StorageFacade implements StorageAdapter {
         listBucket.forEach(streamBucket::add);
         Flux<Blob> blobs = Flux.fromIterable(streamBucket.stream().filter(blob -> !blob.getName().equals(subdirectory)).collect(Collectors.toList()));
         return blobs.flatMap(this::toMediaDTO);
+
+    }
+
+    @Override
+    public boolean deleteObject(String objectName) {
+        Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
+        var deleted = storage.delete(bucketName, objectName);
+        return deleted;
 
     }
 

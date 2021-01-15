@@ -2,6 +2,7 @@ package com.gcp.datastore.domain.application;
 
 import com.gcp.datastore.domain.core.StorageFacade;
 import com.gcp.datastore.domain.core.model.MediaDTO;
+import com.google.rpc.context.AttributeContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -40,6 +41,12 @@ public class StorageResource {
 
         return storage.getFile(subdirectory,object);
     }*/
+
+    @DeleteMapping(value = "/object")
+    public ResponseEntity<?> delete(@RequestParam("file") String file){
+        var deleted = storage.deleteObject(file);
+        return deleted?ResponseEntity.ok().build():ResponseEntity.notFound().build();
+    }
 
     @GetMapping(value = "/directory/all",produces = MediaType.APPLICATION_JSON_VALUE)
     public Flux<MediaDTO> getFile(@RequestParam("directoryPrefix") String subdirectory) {
