@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
@@ -40,7 +41,11 @@ public class StorageResource {
         return storage.getFile(subdirectory,object);
     }*/
 
+    @GetMapping(value = "/directory/all",produces = MediaType.APPLICATION_JSON_VALUE)
+    public Flux<MediaDTO> getFile(@RequestParam("directoryPrefix") String subdirectory) {
 
+        return storage.getFilesFromDirectory(subdirectory);
+    }
 
     @PostMapping(value = "/bucket/create")
     public ResponseEntity<Object> createBucket(@RequestParam("bucket") String name) {

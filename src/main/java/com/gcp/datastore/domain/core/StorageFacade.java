@@ -11,10 +11,13 @@ import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import static com.gcp.datastore.infrastructure.util.StorageUtils.convertToByteArray;
 
@@ -116,6 +119,23 @@ public class StorageFacade implements StorageAdapter {
 
         return storage.get(BlobId.of(bucketName, subdirectory+"/"+objectName));
 
+    }
+
+    @Override
+    public Flux<MediaDTO> getFilesFromDirectory(String subdirectory) {
+        Storage storage = StorageOptions.newBuilder().setProjectId(projectId).build().getService();
+        Bucket bucket = storage.get(bucketName);
+        var listBucket = bucket.list(
+                Storage.BlobListOption.prefix(subdirectory)).getValues();
+        var streamBucket =  new ArrayList<Blob>();
+        listBucket.forEach(streamBucket::add);
+        Flux<Blob> blobs = Flux.fromIterable(streamBucket.stream().filter(blob -> !blob.getName().equals(subdirectory)).collect(Collectors.toList()));
+        return blobs.flatMap(this::toMediaDTO);
+
+    }
+
+    public Mono<MediaDTO> toMediaDTO(Blob blob ){
+        return Mono.just(MediaDTO.builder().name("/download/"+blob.getName()).contentType(blob.getContentType()).build());
     }
 
 
